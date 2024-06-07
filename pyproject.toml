@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "athina-client"
+version = "0.1.0"
+description = "Light weight SDK to interact with athina datasets"
+authors = ["Akshat Gupta <akshat@athina.ai>", "Shiv Sakhuja <shiv@athina.ai>", "Vivek Aditya <vivek@athina.ai>", "Akhil Bisht <akhil@athina.ai>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+python-dotenv = "^1.0.0"
+requests = "*"
+retrying = "*"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

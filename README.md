@@ -1,2 +1,2 @@
-# athina-light
-A light weight version of athina SDK
+# athina-client
+A python SDK to log datasets to athina
