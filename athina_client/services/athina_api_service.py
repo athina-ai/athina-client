@@ -23,6 +23,15 @@ class AthinaApiService:
     def create_dataset(dataset: Dict):
         """
         Creates a dataset by calling the Athina API
+
+        Parameters:
+        - dataset (Dict): A dictionary containing the dataset details.
+
+        Returns:
+        - The newly created dataset object.
+
+        Raises:
+        - CustomException: If the API call fails or returns an error.
         """
         try:
             endpoint = f"{API_BASE_URL}/api/v1/dataset_v2"
@@ -76,6 +85,148 @@ class AthinaApiService:
                 details_message = "please check your athina api key and try again"
                 raise CustomException(error_message, details_message)
             elif response.status_code != 200 and response.status_code != 201:
+                response_json = response.json()
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = response_json.get("details", {}).get(
+                    "message", "No Details"
+                )
+                raise CustomException(error_message, details_message)
+            return response.json()["data"]
+        except Exception as e:
+            raise
+
+    @staticmethod
+    @retry(stop_max_attempt_number=2, wait_fixed=1000)
+    def list_datasets():
+        """
+        Lists all datasets by calling the Athina API.
+
+        Returns:
+        - A list of dataset objects.
+
+        Raises:
+        - CustomException: If the API call fails or returns an error.
+        """
+        try:
+            endpoint = f"{API_BASE_URL}/api/v1/dataset_v2/all"
+            response = requests.get(endpoint, headers=AthinaApiService._headers())
+            if response.status_code == 401:
+                response_json = response.json()
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = "please check your athina api key and try again"
+                raise CustomException(error_message, details_message)
+            elif response.status_code != 200:
+                response_json = response.json()
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = response_json.get("details", {}).get(
+                    "message", "No Details"
+                )
+                raise CustomException(error_message, details_message)
+            return response.json()["datasets"]
+        except Exception as e:
+            raise
+
+    @staticmethod
+    @retry(stop_max_attempt_number=2, wait_fixed=1000)
+    def delete_dataset_by_id(dataset_id: str):
+        """
+        Deletes a dataset by calling the Athina API.
+
+        Parameters:
+        - dataset_id (str): The ID of the dataset to delete.
+
+        Returns:
+        - Message indicating the success of the deletion.
+
+        Raises:
+        - CustomException: If the API call fails or returns an error.
+        """
+        try:
+            endpoint = f"{API_BASE_URL}/api/v1/dataset_v2/{dataset_id}"
+            response = requests.delete(endpoint, headers=AthinaApiService._headers())
+            if response.status_code == 401:
+                response_json = response.json()
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = "please check your athina api key and try again"
+                raise CustomException(error_message, details_message)
+            elif response.status_code != 200:
+                response_json = response.json()
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = response_json.get("details", {}).get(
+                    "message", "No Details"
+                )
+                raise CustomException(error_message, details_message)
+            return response.json()["data"]["message"]
+        except Exception as e:
+            raise
+
+    @staticmethod
+    @retry(stop_max_attempt_number=2, wait_fixed=1000)
+    def get_dataset_by_id(dataset_id: str):
+        """
+        Get a dataset by calling the Athina API.
+
+        Parameters:
+        - dataset_id (str): The ID of the dataset to get.
+
+        Returns:
+        - The dataset object along with metrics and eval configs.
+
+        Raises:
+        - CustomException: If the API call fails or returns an error.
+        """
+        try:
+            endpoint = f"{API_BASE_URL}/api/v1/dataset_v2/fetch-by-id/{dataset_id}"
+            params = {"offset": 0, "limit": 1000, "include_dataset_rows": "true"}
+            response = requests.post(
+                endpoint, headers=AthinaApiService._headers(), params=params
+            )
+            if response.status_code == 401:
+                response_json = response.json()
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = "please check your athina api key and try again"
+                raise CustomException(error_message, details_message)
+            elif response.status_code != 200:
+                response_json = response.json()
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = response_json.get("details", {}).get(
+                    "message", "No Details"
+                )
+                raise CustomException(error_message, details_message)
+            return response.json()["data"]
+        except Exception as e:
+            raise
+
+    @staticmethod
+    @retry(stop_max_attempt_number=2, wait_fixed=1000)
+    def get_dataset_by_name(name: str):
+        """
+        Get a dataset by calling the Athina API.
+
+        Parameters:
+        - name (str): The name of the dataset to get.
+
+        Returns:
+        - The dataset object along with metrics and eval configs
+
+        Raises:
+        - CustomException: If the API call fails or returns an error.
+        """
+        try:
+            endpoint = f"{API_BASE_URL}/api/v1/dataset_v2/fetch-by-name"
+            params = {"offset": 0, "limit": 1000, "include_dataset_rows": "true"}
+            response = requests.post(
+                endpoint,
+                headers=AthinaApiService._headers(),
+                params=params,
+                json={"name": name},
+            )
+            if response.status_code == 401:
+                response_json = response.json()
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = "please check your athina api key and try again"
+                raise CustomException(error_message, details_message)
+            elif response.status_code != 200:
                 response_json = response.json()
                 error_message = response_json.get("error", "Unknown Error")
                 details_message = response_json.get("details", {}).get(

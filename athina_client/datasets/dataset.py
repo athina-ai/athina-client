@@ -82,5 +82,59 @@ class Dataset:
                 raise
 
     @staticmethod
+    def list_datasets():
+        """
+        Lists all datasets for a given athina api key.
+        """
+        try:
+            datasets = AthinaApiService.list_datasets()
+        except Exception as e:
+            raise
+        return [
+            Dataset(
+                id=dataset["id"],
+                source=dataset["source"],
+                name=dataset["name"],
+                description=dataset["description"],
+                language_model_id=dataset["language_model_id"],
+                prompt_template=dataset["prompt_template"],
+            )
+            for dataset in datasets
+        ]
+
+    @staticmethod
+    def delete_dataset_by_id(dataset_id: str):
+        """
+        Deletes a dataset by its ID.
+        """
+        try:
+            response = AthinaApiService.delete_dataset_by_id(dataset_id)
+            return response
+        except Exception as e:
+            raise
+
+    @staticmethod
+    def get_dataset_by_id(dataset_id: str):
+        """
+        Gets a dataset by its ID.
+        """
+        try:
+            response = AthinaApiService.get_dataset_by_id(dataset_id)
+        except Exception as e:
+            raise
+        return response
+
+    @staticmethod
+    def get_dataset_by_name(name: str):
+        """
+        Gets a dataset by name.
+        """
+        try:
+            response = AthinaApiService.get_dataset_by_name(name)
+        except Exception as e:
+            raise
+        return response
+
+    @staticmethod
     def dataset_link(dataset_id: str):
         return f"https://app.athina.ai/develop/{dataset_id}"
