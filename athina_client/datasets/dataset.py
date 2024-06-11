@@ -103,5 +103,16 @@ class Dataset:
         ]
 
     @staticmethod
+    def delete_dataset_by_id(dataset_id: str):
+        """
+        Deletes a dataset by its ID.
+        """
+        try:
+            response = AthinaApiService.delete_dataset_by_id(dataset_id)
+            return response
+        except Exception as e:
+            raise
+
+    @staticmethod
     def dataset_link(dataset_id: str):
         return f"https://app.athina.ai/develop/{dataset_id}"

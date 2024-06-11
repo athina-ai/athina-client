@@ -125,3 +125,37 @@ class AthinaApiService:
             return response.json()["datasets"]
         except Exception as e:
             raise
+
+    @staticmethod
+    @retry(stop_max_attempt_number=2, wait_fixed=1000)
+    def delete_dataset_by_id(dataset_id: str):
+        """
+        Deletes a dataset by calling the Athina API.
+
+        Parameters:
+        - dataset_id (str): The ID of the dataset to delete.
+
+        Returns:
+        - Message indicating the success of the deletion.
+
+        Raises:
+        - CustomException: If the API call fails or returns an error.
+        """
+        try:
+            endpoint = f"{API_BASE_URL}/api/v1/dataset_v2/{dataset_id}"
+            response = requests.delete(endpoint, headers=AthinaApiService._headers())
+            if response.status_code == 401:
+                response_json = response.json()
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = "please check your athina api key and try again"
+                raise CustomException(error_message, details_message)
+            elif response.status_code != 200:
+                response_json = response.json()
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = response_json.get("details", {}).get(
+                    "message", "No Details"
+                )
+                raise CustomException(error_message, details_message)
+            return response.json()["data"]["message"]
+        except Exception as e:
+            raise
