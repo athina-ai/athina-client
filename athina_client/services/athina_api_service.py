@@ -159,3 +159,80 @@ class AthinaApiService:
             return response.json()["data"]["message"]
         except Exception as e:
             raise
+
+    @staticmethod
+    @retry(stop_max_attempt_number=2, wait_fixed=1000)
+    def get_dataset_by_id(dataset_id: str):
+        """
+        Get a dataset by calling the Athina API.
+
+        Parameters:
+        - dataset_id (str): The ID of the dataset to get.
+
+        Returns:
+        - The dataset object along with metrics and eval configs.
+
+        Raises:
+        - CustomException: If the API call fails or returns an error.
+        """
+        try:
+            endpoint = f"{API_BASE_URL}/api/v1/dataset_v2/fetch-by-id/{dataset_id}"
+            params = {"offset": 0, "limit": 1000, "include_dataset_rows": "true"}
+            response = requests.post(
+                endpoint, headers=AthinaApiService._headers(), params=params
+            )
+            if response.status_code == 401:
+                response_json = response.json()
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = "please check your athina api key and try again"
+                raise CustomException(error_message, details_message)
+            elif response.status_code != 200:
+                response_json = response.json()
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = response_json.get("details", {}).get(
+                    "message", "No Details"
+                )
+                raise CustomException(error_message, details_message)
+            return response.json()["data"]
+        except Exception as e:
+            raise
+
+    @staticmethod
+    @retry(stop_max_attempt_number=2, wait_fixed=1000)
+    def get_dataset_by_name(name: str):
+        """
+        Get a dataset by calling the Athina API.
+
+        Parameters:
+        - name (str): The name of the dataset to get.
+
+        Returns:
+        - The dataset object along with metrics and eval configs
+
+        Raises:
+        - CustomException: If the API call fails or returns an error.
+        """
+        try:
+            endpoint = f"{API_BASE_URL}/api/v1/dataset_v2/fetch-by-name"
+            params = {"offset": 0, "limit": 1000, "include_dataset_rows": "true"}
+            response = requests.post(
+                endpoint,
+                headers=AthinaApiService._headers(),
+                params=params,
+                json={"name": name},
+            )
+            if response.status_code == 401:
+                response_json = response.json()
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = "please check your athina api key and try again"
+                raise CustomException(error_message, details_message)
+            elif response.status_code != 200:
+                response_json = response.json()
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = response_json.get("details", {}).get(
+                    "message", "No Details"
+                )
+                raise CustomException(error_message, details_message)
+            return response.json()["data"]
+        except Exception as e:
+            raise

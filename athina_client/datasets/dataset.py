@@ -114,5 +114,27 @@ class Dataset:
             raise
 
     @staticmethod
+    def get_dataset_by_id(dataset_id: str):
+        """
+        Gets a dataset by its ID.
+        """
+        try:
+            response = AthinaApiService.get_dataset_by_id(dataset_id)
+        except Exception as e:
+            raise
+        return response
+
+    @staticmethod
+    def get_dataset_by_name(name: str):
+        """
+        Gets a dataset by name.
+        """
+        try:
+            response = AthinaApiService.get_dataset_by_name(name)
+        except Exception as e:
+            raise
+        return response
+
+    @staticmethod
     def dataset_link(dataset_id: str):
         return f"https://app.athina.ai/develop/{dataset_id}"
