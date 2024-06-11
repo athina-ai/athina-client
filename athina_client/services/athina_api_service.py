@@ -23,6 +23,15 @@ class AthinaApiService:
     def create_dataset(dataset: Dict):
         """
         Creates a dataset by calling the Athina API
+
+        Parameters:
+        - dataset (Dict): A dictionary containing the dataset details.
+
+        Returns:
+        - The newly created dataset object.
+
+        Raises:
+        - CustomException: If the API call fails or returns an error.
         """
         try:
             endpoint = f"{API_BASE_URL}/api/v1/dataset_v2"
@@ -83,5 +92,36 @@ class AthinaApiService:
                 )
                 raise CustomException(error_message, details_message)
             return response.json()["data"]
+        except Exception as e:
+            raise
+
+    @staticmethod
+    @retry(stop_max_attempt_number=2, wait_fixed=1000)
+    def list_datasets():
+        """
+        Lists all datasets by calling the Athina API.
+
+        Returns:
+        - A list of dataset objects.
+
+        Raises:
+        - CustomException: If the API call fails or returns an error.
+        """
+        try:
+            endpoint = f"{API_BASE_URL}/api/v1/dataset_v2/all"
+            response = requests.get(endpoint, headers=AthinaApiService._headers())
+            if response.status_code == 401:
+                response_json = response.json()
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = "please check your athina api key and try again"
+                raise CustomException(error_message, details_message)
+            elif response.status_code != 200:
+                response_json = response.json()
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = response_json.get("details", {}).get(
+                    "message", "No Details"
+                )
+                raise CustomException(error_message, details_message)
+            return response.json()["datasets"]
         except Exception as e:
             raise
