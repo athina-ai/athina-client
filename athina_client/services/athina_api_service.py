@@ -177,7 +177,7 @@ class AthinaApiService:
         """
         try:
             endpoint = f"{API_BASE_URL}/api/v1/dataset_v2/fetch-by-id/{dataset_id}"
-            params = {"offset": 0, "limit": 1000, "include_dataset_rows": "true"}
+            params = {"offset": 0, "limit": 5000, "include_dataset_rows": "true"}
             response = requests.post(
                 endpoint, headers=AthinaApiService._headers(), params=params
             )
@@ -214,7 +214,7 @@ class AthinaApiService:
         """
         try:
             endpoint = f"{API_BASE_URL}/api/v1/dataset_v2/fetch-by-name"
-            params = {"offset": 0, "limit": 1000, "include_dataset_rows": "true"}
+            params = {"offset": 0, "limit": 5000, "include_dataset_rows": "true"}
             response = requests.post(
                 endpoint,
                 headers=AthinaApiService._headers(),
