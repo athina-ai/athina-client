@@ -3,7 +3,8 @@ from retrying import retry
 from typing import Any, Dict, List
 from athina_client.errors import CustomException, NoAthinaApiKeyException
 from athina_client.keys import AthinaApiKey
-from athina_client.constants import API_BASE_URL
+from athina_client.constants import ATHINA_API_BASE_URL
+from athina_client.api_base_url import AthinaApiBaseUrl
 
 
 class AthinaApiService:
@@ -17,6 +18,11 @@ class AthinaApiService:
         return {
             "athina-api-key": athina_api_key,
         }
+
+    @staticmethod
+    def _base_url():
+        base_url = AthinaApiBaseUrl.get_url()
+        return base_url if base_url else ATHINA_API_BASE_URL
 
     @staticmethod
     @retry(stop_max_attempt_number=2, wait_fixed=1000)
@@ -34,7 +40,7 @@ class AthinaApiService:
         - CustomException: If the API call fails or returns an error.
         """
         try:
-            endpoint = f"{API_BASE_URL}/api/v1/dataset_v2"
+            endpoint = f"{AthinaApiService._base_url()}/api/v1/dataset_v2"
             response = requests.post(
                 endpoint,
                 headers=AthinaApiService._headers(),
@@ -73,7 +79,7 @@ class AthinaApiService:
         - CustomException: If the API call fails or returns an error.
         """
         try:
-            endpoint = f"{API_BASE_URL}/api/v1/dataset_v2/{dataset_id}/add-rows"
+            endpoint = f"{AthinaApiService._base_url()}/api/v1/dataset_v2/{dataset_id}/add-rows"
             response = requests.post(
                 endpoint,
                 headers=AthinaApiService._headers(),
@@ -108,7 +114,7 @@ class AthinaApiService:
         - CustomException: If the API call fails or returns an error.
         """
         try:
-            endpoint = f"{API_BASE_URL}/api/v1/dataset_v2/all"
+            endpoint = f"{AthinaApiService._base_url()}/api/v1/dataset_v2/all"
             response = requests.get(endpoint, headers=AthinaApiService._headers())
             if response.status_code == 401:
                 response_json = response.json()
@@ -142,7 +148,7 @@ class AthinaApiService:
         - CustomException: If the API call fails or returns an error.
         """
         try:
-            endpoint = f"{API_BASE_URL}/api/v1/dataset_v2/{dataset_id}"
+            endpoint = f"{AthinaApiService._base_url()}/api/v1/dataset_v2/{dataset_id}"
             response = requests.delete(endpoint, headers=AthinaApiService._headers())
             if response.status_code == 401:
                 response_json = response.json()
@@ -176,7 +182,7 @@ class AthinaApiService:
         - CustomException: If the API call fails or returns an error.
         """
         try:
-            endpoint = f"{API_BASE_URL}/api/v1/dataset_v2/fetch-by-id/{dataset_id}"
+            endpoint = f"{AthinaApiService._base_url()}/api/v1/dataset_v2/fetch-by-id/{dataset_id}"
             params = {"offset": 0, "limit": 1000, "include_dataset_rows": "true"}
             response = requests.post(
                 endpoint, headers=AthinaApiService._headers(), params=params
@@ -213,7 +219,7 @@ class AthinaApiService:
         - CustomException: If the API call fails or returns an error.
         """
         try:
-            endpoint = f"{API_BASE_URL}/api/v1/dataset_v2/fetch-by-name"
+            endpoint = f"{AthinaApiService._base_url()}/api/v1/dataset_v2/fetch-by-name"
             params = {"offset": 0, "limit": 1000, "include_dataset_rows": "true"}
             response = requests.post(
                 endpoint,
