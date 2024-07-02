@@ -463,3 +463,41 @@ class AthinaApiService:
             return response.json()["data"]
         except Exception as e:
             raise
+
+    @staticmethod
+    @retry(stop_max_attempt_number=2, wait_fixed=1000)
+    def mark_prompt_as_default(slug: str, version: int):
+        """
+        Set a prompt version as the default by calling the Athina API.
+
+        Parameters:
+        - slug (str): The slug of the prompt.
+        - version (int): The version to set as default.
+
+        Returns:
+        - The prompt object.
+
+        Raises:
+        - CustomException: If the API call fails or returns an error.
+        """
+        try:
+            endpoint = f"{AthinaApiService._base_url()}/api/v1/prompt/{slug}/{version}/set-default"
+            response = requests.patch(endpoint, headers=AthinaApiService._headers())
+            response_json = response.json()
+
+            if response.status_code == 401:
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = "please check your athina api key and try again"
+                raise CustomException(error_message, details_message)
+            elif response.status_code != 200:
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = response_json.get("details", {}).get(
+                    "message", "No Details"
+                )
+                raise CustomException(error_message, details_message)
+
+            return response_json["data"]["prompt"]
+        except requests.RequestException as e:
+            raise CustomException("Request failed", str(e))
+        except Exception as e:
+            raise CustomException("Unexpected error occurred", str(e))

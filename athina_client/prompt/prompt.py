@@ -275,6 +275,54 @@ class Prompt:
             updated_at=response_data["prompt"]["updated_at"],
         )
 
+    @staticmethod
+    def set_default(slug: str, version: int) -> "Prompt":
+        """
+        Set a prompt template version as the default by calling the Athina API.
+
+        Parameters:
+        - slug (str): The slug of the prompt.
+        - version (int): The version to set as default.
+
+        Returns:
+        - The prompt object.
+
+        Raises:
+        - CustomException: If the API call fails or returns an error.
+        """
+        try:
+            prompt_data = AthinaApiService.mark_prompt_as_default(slug, version)
+            return Prompt(
+                id=prompt_data["id"],
+                user_id=prompt_data["user_id"],
+                org_id=prompt_data["org_id"],
+                workspace_slug=prompt_data["workspace_slug"],
+                prompt_template_slug_id=prompt_data["prompt_template_slug_id"],
+                commit_message=prompt_data["commit_message"],
+                prompt=prompt_data["prompt"],
+                tools=prompt_data.get("tools"),
+                tool_choice=prompt_data.get("tool_choice"),
+                version=prompt_data["version"],
+                is_default=prompt_data["is_default"],
+                model=prompt_data.get("model"),
+                org_model_config_id=prompt_data.get("org_model_config_id"),
+                parameters=(
+                    ModelOptions(**prompt_data["parameters"])
+                    if prompt_data.get("parameters")
+                    else None
+                ),
+                hash=prompt_data.get("hash"),
+                created_at=prompt_data["created_at"],
+                updated_at=prompt_data["updated_at"],
+                org_model_config=(
+                    OrgModelConfig(**prompt_data["org_model_config"])
+                    if prompt_data.get("org_model_config")
+                    else None
+                ),
+            )
+        except Exception as e:
+            raise CustomException("Error setting prompt template live", str(e))
+
 
 @dataclass
 class Slug:
