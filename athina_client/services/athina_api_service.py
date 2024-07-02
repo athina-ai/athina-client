@@ -310,6 +310,84 @@ class AthinaApiService:
 
     @staticmethod
     @retry(stop_max_attempt_number=2, wait_fixed=1000)
+    def delete_prompt_slug(slug: str):
+        """
+        Delete a prompt slug and its templates by calling the Athina API.
+
+        Parameters:
+        - slug (str): The slug to delete.
+
+        Returns:
+        - A message indicating the success of the deletion.
+
+        Raises:
+        - CustomException: If the API call fails or returns an error.
+        """
+        try:
+            endpoint = f"{AthinaApiService._base_url()}/api/v1/prompt/slug/{slug}"
+            response = requests.delete(endpoint, headers=AthinaApiService._headers())
+            if response.status_code == 401:
+                response_json = response.json()
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = "please check your athina api key and try again"
+                raise CustomException(error_message, details_message)
+            elif response.status_code != 200:
+                response_json = response.json()
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = response_json.get("details", {}).get(
+                    "message", "No Details"
+                )
+                raise CustomException(error_message, details_message)
+            return response.json()["message"]
+        except Exception as e:
+            raise
+
+    @staticmethod
+    @retry(stop_max_attempt_number=2, wait_fixed=1000)
+    def duplicate_prompt_slug(slug: str, name: str):
+        """
+        Duplicate a prompt slug by calling the Athina API.
+
+        Parameters:
+        - slug (str): The slug to duplicate.
+        - name (str): The new name for the duplicated slug.
+
+        Returns:
+        - The duplicated prompt slug object and the default/latest version/latest prompt of the slug
+
+        Raises:
+        - CustomException: If the API call fails or returns an error.
+        """
+        try:
+            endpoint = (
+                f"{AthinaApiService._base_url()}/api/v1/prompt/slug/{slug}/duplicate"
+            )
+            response = requests.post(
+                endpoint,
+                headers=AthinaApiService._headers(),
+                json={"name": name},
+            )
+            response_json = response.json()
+
+            if response.status_code == 401:
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = "please check your athina api key and try again"
+                raise CustomException(error_message, details_message)
+            elif response.status_code != 200 and response.status_code != 201:
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = response_json.get("details", {}).get(
+                    "message", "No Details"
+                )
+                raise CustomException(error_message, details_message)
+
+            return response_json["data"]["slug"]
+        except requests.RequestException as e:
+            raise CustomException("Request failed", str(e))
+        except Exception as e:
+            raise CustomException("Unexpected error occurred", str(e))
+
+    @staticmethod
+    @retry(stop_max_attempt_number=2, wait_fixed=1000)
     def create_prompt(slug: str, prompt_data: Dict[str, Any]):
         """
         Creates a prompt by calling the Athina API.
@@ -385,3 +463,41 @@ class AthinaApiService:
             return response.json()["data"]
         except Exception as e:
             raise
+
+    @staticmethod
+    @retry(stop_max_attempt_number=2, wait_fixed=1000)
+    def mark_prompt_as_default(slug: str, version: int):
+        """
+        Set a prompt version as the default by calling the Athina API.
+
+        Parameters:
+        - slug (str): The slug of the prompt.
+        - version (int): The version to set as default.
+
+        Returns:
+        - The prompt object.
+
+        Raises:
+        - CustomException: If the API call fails or returns an error.
+        """
+        try:
+            endpoint = f"{AthinaApiService._base_url()}/api/v1/prompt/{slug}/{version}/set-default"
+            response = requests.patch(endpoint, headers=AthinaApiService._headers())
+            response_json = response.json()
+
+            if response.status_code == 401:
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = "please check your athina api key and try again"
+                raise CustomException(error_message, details_message)
+            elif response.status_code != 200:
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = response_json.get("details", {}).get(
+                    "message", "No Details"
+                )
+                raise CustomException(error_message, details_message)
+
+            return response_json["data"]["prompt"]
+        except requests.RequestException as e:
+            raise CustomException("Request failed", str(e))
+        except Exception as e:
+            raise CustomException("Unexpected error occurred", str(e))

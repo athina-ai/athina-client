@@ -85,7 +85,7 @@ class Prompt:
     org_model_config: Optional[OrgModelConfig] = None
 
     @staticmethod
-    def create_prompt(
+    def create(
         slug: str,
         prompt: List[Dict[str, str]],
         model: Optional[str] = None,
@@ -149,7 +149,7 @@ class Prompt:
         )
 
     @staticmethod
-    def get_default_prompt(slug: str) -> "Prompt":
+    def get_default(slug: str) -> "Prompt":
         """
         Get default prompt by calling the Athina API.
 
@@ -205,7 +205,7 @@ class Prompt:
         )
 
     @staticmethod
-    def run_prompt(
+    def run(
         slug: str,
         variables: Dict[str, Any],
         version: Optional[int] = None,
@@ -275,6 +275,54 @@ class Prompt:
             updated_at=response_data["prompt"]["updated_at"],
         )
 
+    @staticmethod
+    def set_default(slug: str, version: int) -> "Prompt":
+        """
+        Set a prompt template version as the default by calling the Athina API.
+
+        Parameters:
+        - slug (str): The slug of the prompt.
+        - version (int): The version to set as default.
+
+        Returns:
+        - The prompt object.
+
+        Raises:
+        - CustomException: If the API call fails or returns an error.
+        """
+        try:
+            prompt_data = AthinaApiService.mark_prompt_as_default(slug, version)
+            return Prompt(
+                id=prompt_data["id"],
+                user_id=prompt_data["user_id"],
+                org_id=prompt_data["org_id"],
+                workspace_slug=prompt_data["workspace_slug"],
+                prompt_template_slug_id=prompt_data["prompt_template_slug_id"],
+                commit_message=prompt_data["commit_message"],
+                prompt=prompt_data["prompt"],
+                tools=prompt_data.get("tools"),
+                tool_choice=prompt_data.get("tool_choice"),
+                version=prompt_data["version"],
+                is_default=prompt_data["is_default"],
+                model=prompt_data.get("model"),
+                org_model_config_id=prompt_data.get("org_model_config_id"),
+                parameters=(
+                    ModelOptions(**prompt_data["parameters"])
+                    if prompt_data.get("parameters")
+                    else None
+                ),
+                hash=prompt_data.get("hash"),
+                created_at=prompt_data["created_at"],
+                updated_at=prompt_data["updated_at"],
+                org_model_config=(
+                    OrgModelConfig(**prompt_data["org_model_config"])
+                    if prompt_data.get("org_model_config")
+                    else None
+                ),
+            )
+        except Exception as e:
+            raise CustomException("Error setting prompt template live", str(e))
+
 
 @dataclass
 class Slug:
@@ -289,10 +337,9 @@ class Slug:
     created_at: str = ""
     updated_at: str = ""
     user: Optional[Dict[str, Any]] = None
-    is_default: bool = False
 
     @staticmethod
-    def get_all_prompt_slugs() -> List["Slug"]:
+    def list() -> List["Slug"]:
         """
         Get all prompt slugs by calling the Athina API.
 
@@ -320,7 +367,105 @@ class Slug:
                 created_at=slug["created_at"],
                 updated_at=slug["updated_at"],
                 user=slug.get("user"),
-                is_default=slug["is_default"],
             )
             for slug in slugs_data
         ]
+
+    @staticmethod
+    def delete(slug: str) -> str:
+        """
+        Delete a prompt slug and its corresponding templates by calling the Athina API.
+
+        Parameters:
+        - slug (str): The slug to delete.
+
+        Raises:
+        - CustomException: If the API call fails or returns an error.
+        """
+        try:
+            response = AthinaApiService.delete_prompt_slug(slug)
+            return response
+        except Exception as e:
+            raise CustomException("Error deleting prompt slug", str(e))
+
+    @staticmethod
+    def duplicate(slug: str, name: str) -> "DuplicateSlugResponse":
+        """
+        Duplicate a prompt slug by calling the Athina API.
+
+        Parameters:
+        - slug (str): The slug to duplicate.
+        - name (str): The new name for the duplicated slug.
+
+        Returns:
+        - The duplicated prompt slug object and the default/latest version/latest prompt of the slug
+
+        Raises:
+        - CustomException: If the API call fails or returns an error.
+        """
+        try:
+            slug_data = AthinaApiService.duplicate_prompt_slug(slug, name)
+            return DuplicateSlugResponse.from_dict(slug_data)
+        except Exception as e:
+            raise CustomException("Error duplicating prompt slug", str(e))
+
+
+@dataclass
+class DuplicateSlugResponse:
+    slug: Slug
+    prompt: Optional[Prompt]
+
+    @staticmethod
+    def from_dict(data: Dict[str, Any]) -> "DuplicateSlugResponse":
+        new_prompt_template_slug_data = data["newPromptTemplateSlug"]
+        new_prompt_template_data = data.get("newPromptTemplate")
+
+        new_slug = Slug(
+            id=new_prompt_template_slug_data["id"],
+            org_id=new_prompt_template_slug_data["org_id"],
+            workspace_slug=new_prompt_template_slug_data["workspace_slug"],
+            name=new_prompt_template_slug_data["name"],
+            directory=new_prompt_template_slug_data.get("directory"),
+            starred=new_prompt_template_slug_data["starred"],
+            emoji=new_prompt_template_slug_data.get("emoji"),
+            created_by=new_prompt_template_slug_data["created_by"],
+            created_at=new_prompt_template_slug_data["created_at"],
+            updated_at=new_prompt_template_slug_data["updated_at"],
+            user=new_prompt_template_slug_data.get("user"),
+        )
+
+        print
+        new_prompt = None
+        if new_prompt_template_data:
+            new_prompt = Prompt(
+                id=new_prompt_template_data["id"],
+                user_id=new_prompt_template_data["user_id"],
+                org_id=new_prompt_template_data["org_id"],
+                workspace_slug=new_prompt_template_data["workspace_slug"],
+                prompt_template_slug_id=new_prompt_template_data[
+                    "prompt_template_slug_id"
+                ],
+                commit_message=new_prompt_template_data["commit_message"],
+                prompt=new_prompt_template_data["prompt"],
+                tools=new_prompt_template_data.get("tools"),
+                tool_choice=new_prompt_template_data.get("tool_choice"),
+                version=new_prompt_template_data.get("version"),
+                is_default=new_prompt_template_data["is_default"],
+                model=new_prompt_template_data.get("model"),
+                org_model_config_id=new_prompt_template_data.get("org_model_config_id"),
+                parameters=(
+                    ModelOptions(**new_prompt_template_data["parameters"])
+                    if new_prompt_template_data.get("parameters")
+                    else None
+                ),
+                hash=new_prompt_template_data.get("hash"),
+                created_at=new_prompt_template_data["created_at"],
+                updated_at=new_prompt_template_data["updated_at"],
+                org_model_config=(
+                    OrgModelConfig(**new_prompt_template_data["org_model_config"])
+                    if new_prompt_template_data.get("org_model_config")
+                    else None
+                ),
+            )
+
+        return DuplicateSlugResponse(slug=new_slug, prompt=new_prompt)
