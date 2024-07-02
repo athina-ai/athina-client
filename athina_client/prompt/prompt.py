@@ -85,7 +85,7 @@ class Prompt:
     org_model_config: Optional[OrgModelConfig] = None
 
     @staticmethod
-    def create_prompt(
+    def create(
         slug: str,
         prompt: List[Dict[str, str]],
         model: Optional[str] = None,
@@ -149,7 +149,7 @@ class Prompt:
         )
 
     @staticmethod
-    def get_default_prompt(slug: str) -> "Prompt":
+    def get_default(slug: str) -> "Prompt":
         """
         Get default prompt by calling the Athina API.
 
@@ -205,7 +205,7 @@ class Prompt:
         )
 
     @staticmethod
-    def run_prompt(
+    def run(
         slug: str,
         variables: Dict[str, Any],
         version: Optional[int] = None,
@@ -292,7 +292,7 @@ class Slug:
     is_default: bool = False
 
     @staticmethod
-    def get_all_prompt_slugs() -> List["Slug"]:
+    def list() -> List["Slug"]:
         """
         Get all prompt slugs by calling the Athina API.
 
@@ -324,3 +324,20 @@ class Slug:
             )
             for slug in slugs_data
         ]
+
+    @staticmethod
+    def delete(slug: str) -> str:
+        """
+        Delete a prompt slug and its corresponding templates by calling the Athina API.
+
+        Parameters:
+        - slug (str): The slug to delete.
+
+        Raises:
+        - CustomException: If the API call fails or returns an error.
+        """
+        try:
+            response = AthinaApiService.delete_prompt_slug(slug)
+            return response
+        except Exception as e:
+            raise CustomException("Error deleting prompt slug", str(e))

@@ -310,6 +310,40 @@ class AthinaApiService:
 
     @staticmethod
     @retry(stop_max_attempt_number=2, wait_fixed=1000)
+    def delete_prompt_slug(slug: str):
+        """
+        Delete a prompt slug and its templates by calling the Athina API.
+
+        Parameters:
+        - slug (str): The slug to delete.
+
+        Returns:
+        - A message indicating the success of the deletion.
+
+        Raises:
+        - CustomException: If the API call fails or returns an error.
+        """
+        try:
+            endpoint = f"{AthinaApiService._base_url()}/api/v1/prompt/slug/{slug}"
+            response = requests.delete(endpoint, headers=AthinaApiService._headers())
+            if response.status_code == 401:
+                response_json = response.json()
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = "please check your athina api key and try again"
+                raise CustomException(error_message, details_message)
+            elif response.status_code != 200:
+                response_json = response.json()
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = response_json.get("details", {}).get(
+                    "message", "No Details"
+                )
+                raise CustomException(error_message, details_message)
+            return response.json()["message"]
+        except Exception as e:
+            raise
+
+    @staticmethod
+    @retry(stop_max_attempt_number=2, wait_fixed=1000)
     def create_prompt(slug: str, prompt_data: Dict[str, Any]):
         """
         Creates a prompt by calling the Athina API.
