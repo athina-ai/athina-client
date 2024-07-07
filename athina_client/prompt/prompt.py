@@ -409,6 +409,40 @@ class Slug:
         except Exception as e:
             raise CustomException("Error duplicating prompt slug", str(e))
 
+    # Methods to update directory, favourite, and emoji
+    @staticmethod
+    def add_to_directory(slug: str, directory: str):
+        update_data = {"directory": directory if directory else None}
+        try:
+            updated_slug = AthinaApiService.update_prompt_template_slug(
+                slug, update_data
+            )
+            return updated_slug
+        except Exception as e:
+            raise CustomException("Error updating slug directory", str(e))
+
+    @staticmethod
+    def favourite_slug(slug: str, starred: bool):
+        update_data = {"starred": starred}
+        try:
+            updated_slug = AthinaApiService.update_prompt_template_slug(
+                slug, update_data
+            )
+            return updated_slug
+        except Exception as e:
+            raise CustomException("Error favouriting slug", str(e))
+
+    @staticmethod
+    def set_emoji(slug: str, emoji: str):
+        update_data = {"emoji": emoji if emoji else None}
+        try:
+            updated_slug = AthinaApiService.update_prompt_template_slug(
+                slug, update_data
+            )
+            return updated_slug
+        except Exception as e:
+            raise CustomException("Error updating slug emoji", str(e))
+
 
 @dataclass
 class DuplicateSlugResponse:
