@@ -501,3 +501,42 @@ class AthinaApiService:
             raise CustomException("Request failed", str(e))
         except Exception as e:
             raise CustomException("Unexpected error occurred", str(e))
+
+    @staticmethod
+    @retry(stop_max_attempt_number=2, wait_fixed=1000)
+    def update_prompt_template_slug(slug: str, update_data: Dict[str, Any]):
+        """
+        Updates a prompt template slug by calling the Athina API.
+
+        Parameters:
+        - slug (str): The slug of the prompt to update.
+        - update_data (Dict): The data to update the prompt template slug.
+
+        Returns:
+        - The updated prompt template slug object.
+
+        Raises:
+        - CustomException: If the API call fails or returns an error.
+        """
+        try:
+            endpoint = f"{AthinaApiService._base_url()}/api/v1/prompt/slug/{slug}"
+            response = requests.patch(
+                endpoint,
+                headers=AthinaApiService._headers(),
+                json=update_data,
+            )
+            if response.status_code == 401:
+                response_json = response.json()
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = "please check your athina api key and try again"
+                raise CustomException(error_message, details_message)
+            elif response.status_code != 200:
+                response_json = response.json()
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = response_json.get("details", {}).get(
+                    "message", "No Details"
+                )
+                raise CustomException(error_message, details_message)
+            return response.json()["data"]["slug"]
+        except Exception as e:
+            raise CustomException("Error updating prompt template slug", str(e))
