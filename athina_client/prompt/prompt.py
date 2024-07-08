@@ -422,7 +422,7 @@ class Slug:
             raise CustomException("Error updating slug directory", str(e))
 
     @staticmethod
-    def favourite_slug(slug: str, starred: bool):
+    def favorite_slug(slug: str, starred: bool):
         update_data = {"starred": starred}
         try:
             updated_slug = AthinaApiService.update_prompt_template_slug(
