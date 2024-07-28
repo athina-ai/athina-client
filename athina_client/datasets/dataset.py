@@ -21,20 +21,6 @@ class Dataset:
         prompt_template: Optional[Any] = None,
         rows: List[Dict[str, Any]] = None,
     ):
-        """
-        Creates a new dataset with the specified properties.
-        Parameters:
-        - name (str): The name of the dataset. This is a required field.
-        - description (Optional[str]): An optional textual description of the dataset, providing additional context.
-        - language_model_id (Optional[str]): An optional identifier for the language model associated with this dataset.
-        - prompt_template (Optional[Any]): An optional template for prompts used in this dataset.
-
-        Returns:
-        The newly created dataset object
-
-        Raises:
-        - Exception: If the dataset could not be created due to an error like invalid parameters, database errors, etc.
-        """
         dataset_data = {
             "source": "dev_sdk",
             "name": name,
@@ -44,7 +30,6 @@ class Dataset:
             "dataset_rows": rows or [],
         }
 
-        # Remove keys where the value is None
         dataset_data = {k: v for k, v in dataset_data.items() if v is not None}
 
         try:
@@ -63,16 +48,6 @@ class Dataset:
 
     @staticmethod
     def add_rows(dataset_id: str, rows: List[Dict[str, Any]]):
-        """
-        Adds rows to a dataset in batches of 100.
-
-        Parameters:
-        - dataset_id (str): The ID of the dataset to add rows to.
-        - rows (List[DatasetRow]): The rows to add to the dataset.
-
-        Raises:
-        - Exception: If the API returns an error or the limit of 1000 rows is exceeded.
-        """
         batch_size = 100
         for i in range(0, len(rows), batch_size):
             batch = rows[i : i + batch_size]
@@ -83,9 +58,6 @@ class Dataset:
 
     @staticmethod
     def list_datasets():
-        """
-        Lists all datasets for a given athina api key.
-        """
         try:
             datasets = AthinaApiService.list_datasets()
         except Exception as e:
@@ -104,9 +76,6 @@ class Dataset:
 
     @staticmethod
     def delete_dataset_by_id(dataset_id: str):
-        """
-        Deletes a dataset by its ID.
-        """
         try:
             response = AthinaApiService.delete_dataset_by_id(dataset_id)
             return response
@@ -115,26 +84,73 @@ class Dataset:
 
     @staticmethod
     def get_dataset_by_id(dataset_id: str):
-        """
-        Gets a dataset by its ID.
-        """
         try:
             response = AthinaApiService.get_dataset_by_id(dataset_id)
+            return Dataset._clean_response(response)
         except Exception as e:
             raise
-        return response
 
     @staticmethod
     def get_dataset_by_name(name: str):
-        """
-        Gets a dataset by name.
-        """
         try:
             response = AthinaApiService.get_dataset_by_name(name)
+            return Dataset._clean_response(response)
         except Exception as e:
             raise
-        return response
 
     @staticmethod
     def dataset_link(dataset_id: str):
         return f"https://app.athina.ai/develop/{dataset_id}"
+
+    @staticmethod
+    def _clean_response(response: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Cleans the response by removing unnecessary keys and modifying the dataset_eval_results.
+        """
+        dataset = response.get("dataset", {})
+        dataset_rows = response.get("dataset_rows", [])
+        development_eval_configs = response.get("development_eval_configs", [])
+
+        # Create a lookup for development_eval_configs by id
+        eval_config_lookup = {
+            config["id"]: {
+                "display_name": config["display_name"],
+                "eval_type_id": config["eval_type_id"],
+            }
+            for config in development_eval_configs
+        }
+
+        # Clean dataset rows
+        for row in dataset_rows:
+            if "dataset_eval_results" in row:
+                for eval_result in row["dataset_eval_results"]:
+                    eval_config_id = eval_result.get("development_eval_config_id")
+                    if eval_config_id and eval_config_id in eval_config_lookup:
+                        eval_result["development_eval_config"] = eval_config_lookup[
+                            eval_config_id
+                        ]
+                    eval_result.pop("eval_run", None)
+                    eval_result.pop("development_eval_config_id", None)
+
+        cleaned_response = {
+            "dataset": {
+                "id": dataset.get("id"),
+                "source": dataset.get("source"),
+                "user_id": dataset.get("user_id"),
+                "org_id": dataset.get("org_id"),
+                "workspace_slug": dataset.get("workspace_slug"),
+                "name": dataset.get("name"),
+                "description": dataset.get("description"),
+                "language_model_id": dataset.get("language_model_id"),
+                "prompt_template": dataset.get("prompt_template"),
+                "reference_dataset_id": dataset.get("reference_dataset_id"),
+                "created_at": dataset.get("created_at"),
+                "updated_at": dataset.get("updated_at"),
+                "reference_dataset": dataset.get("reference_dataset"),
+                "derived_datasets": dataset.get("derived_datasets"),
+                "datacolumn": dataset.get("datacolumn"),
+            },
+            "dataset_rows": dataset_rows,
+        }
+
+        return cleaned_response
