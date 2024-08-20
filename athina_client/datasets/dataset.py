@@ -20,7 +20,20 @@ class Dataset:
         language_model_id: Optional[str] = None,
         prompt_template: Optional[Any] = None,
         rows: List[Dict[str, Any]] = None,
-    ):
+    ) -> "Dataset":
+        """
+        Creates a new dataset with the provided details and rows.
+
+        Args:
+            name (str): The name of the dataset.
+            description (Optional[str]): A brief description of the dataset.
+            language_model_id (Optional[str]): The ID of the language model used.
+            prompt_template (Optional[Any]): The prompt template associated with the dataset.
+            rows (List[Dict[str, Any]]): A list of rows to include in the dataset.
+
+        Returns:
+            Dataset: An instance of the Dataset class representing the newly created dataset.
+        """
         dataset_data = {
             "source": "dev_sdk",
             "name": name,
@@ -36,6 +49,7 @@ class Dataset:
             created_dataset_data = AthinaApiService.create_dataset(dataset_data)
         except Exception as e:
             raise
+
         dataset = Dataset(
             id=created_dataset_data["id"],
             source=created_dataset_data["source"],
@@ -48,6 +62,13 @@ class Dataset:
 
     @staticmethod
     def add_rows(dataset_id: str, rows: List[Dict[str, Any]]):
+        """
+        Adds rows to an existing dataset in batches.
+
+        Args:
+            dataset_id (str): The ID of the dataset to which rows will be added.
+            rows (List[Dict[str, Any]]): A list of rows to be added to the dataset.
+        """
         batch_size = 100
         for i in range(0, len(rows), batch_size):
             batch = rows[i : i + batch_size]
@@ -57,7 +78,13 @@ class Dataset:
                 raise
 
     @staticmethod
-    def list_datasets():
+    def list_datasets() -> List["Dataset"]:
+        """
+        Retrieves a list of all datasets available.
+
+        Returns:
+            List[Dataset]: A list of Dataset instances representing all available datasets.
+        """
         try:
             datasets = AthinaApiService.list_datasets()
         except Exception as e:
@@ -75,7 +102,16 @@ class Dataset:
         ]
 
     @staticmethod
-    def delete_dataset_by_id(dataset_id: str):
+    def delete_dataset_by_id(dataset_id: str) -> Dict[str, Any]:
+        """
+        Deletes a dataset by its ID.
+
+        Args:
+            dataset_id (str): The ID of the dataset to be deleted.
+
+        Returns:
+            Dict[str, Any]: The response from the API after deletion.
+        """
         try:
             response = AthinaApiService.delete_dataset_by_id(dataset_id)
             return response
@@ -83,29 +119,70 @@ class Dataset:
             raise
 
     @staticmethod
-    def get_dataset_by_id(dataset_id: str):
+    def get_dataset_by_id(
+        dataset_id: str, response_format: Optional[str] = "flat"
+    ) -> Dict[str, Any]:
+        """
+        Retrieves a dataset by its ID and formats the response based on the provided format.
+
+        Args:
+            dataset_id (str): The ID of the dataset to retrieve.
+            response_format (Optional[str]): The format of the response, either 'flat' or 'rich'. Defaults to 'flat'.
+
+        Returns:
+            Dict[str, Any]: The cleaned and formatted dataset information.
+        """
         try:
             response = AthinaApiService.get_dataset_by_id(dataset_id)
-            return Dataset._clean_response(response)
+            return Dataset._clean_response(response, response_format)
         except Exception as e:
             raise
 
     @staticmethod
-    def get_dataset_by_name(name: str):
+    def get_dataset_by_name(
+        name: str, response_format: Optional[str] = "flat"
+    ) -> Dict[str, Any]:
+        """
+        Retrieves a dataset by its name and formats the response based on the provided format.
+
+        Args:
+            name (str): The name of the dataset to retrieve.
+            response_format (Optional[str]): The format of the response, either 'flat' or 'rich'. Defaults to 'flat'.
+
+        Returns:
+            Dict[str, Any]: The cleaned and formatted dataset information.
+        """
         try:
             response = AthinaApiService.get_dataset_by_name(name)
-            return Dataset._clean_response(response)
+            return Dataset._clean_response(response, response_format)
         except Exception as e:
             raise
 
     @staticmethod
-    def dataset_link(dataset_id: str):
+    def dataset_link(dataset_id: str) -> str:
+        """
+        Generates a link to the dataset on the Athina platform.
+
+        Args:
+            dataset_id (str): The ID of the dataset.
+
+        Returns:
+            str: A URL linking to the dataset on the Athina platform.
+        """
         return f"https://app.athina.ai/develop/{dataset_id}"
 
-    @staticmethod
-    def _clean_response(response: Dict[str, Any]) -> Dict[str, Any]:
+    def _clean_response(
+        response: Dict[str, Any], response_format: str
+    ) -> Dict[str, Any]:
         """
-        Cleans the response by removing unnecessary keys and modifying the dataset_eval_results.
+        Cleans and formats the API response by removing unnecessary keys and modifying the dataset evaluation results.
+
+        Args:
+            response (Dict[str, Any]): The raw API response containing dataset information.
+            response_format (str): The format of the response, either 'flat' or 'rich'.
+
+        Returns:
+            Dict[str, Any]: The cleaned and formatted dataset information.
         """
         dataset = response.get("dataset", {})
         dataset_rows = response.get("dataset_rows", [])
@@ -122,15 +199,48 @@ class Dataset:
 
         # Clean dataset rows
         for row in dataset_rows:
-            if "dataset_eval_results" in row:
-                for eval_result in row["dataset_eval_results"]:
-                    eval_config_id = eval_result.get("development_eval_config_id")
-                    if eval_config_id and eval_config_id in eval_config_lookup:
-                        eval_result["development_eval_config"] = eval_config_lookup[
-                            eval_config_id
-                        ]
-                    eval_result.pop("eval_run", None)
-                    eval_result.pop("development_eval_config_id", None)
+            for config_id, config_data in eval_config_lookup.items():
+                eval_result = next(
+                    (
+                        er
+                        for er in row.get("dataset_eval_results", [])
+                        if er.get("development_eval_config_id") == config_id
+                    ),
+                    None,
+                )
+
+                if eval_result:
+                    metric_value = eval_result.get("metric_value")
+
+                    # Attempt to convert to an integer if possible
+                    try:
+                        metric_value = int(metric_value)
+                    except (ValueError, TypeError):
+                        pass  # Keep it as-is if it's not a number
+
+                    if response_format == "rich":
+                        metric_id = eval_result.get("metric_id")
+                        explanation = eval_result.get("explanation")
+
+                        # Set "Ragas Faithfulness Test" to None if metric_id is None
+                        if metric_id is None:
+                            row[f"{config_data['display_name']}"] = None
+                        else:
+                            row[f"{config_data['display_name']}"] = {
+                                "metric_id": metric_id,
+                                "metric_value": metric_value,
+                                "explanation": explanation,
+                            }
+                    elif response_format == "flat":
+                        row[f"{config_data['display_name']}"] = metric_value
+                else:
+                    if response_format == "rich":
+                        row[f"{config_data['display_name']}"] = None
+                    elif response_format == "flat":
+                        row[f"{config_data['display_name']}"] = None
+
+            # Remove the original dataset_eval_results array
+            row.pop("dataset_eval_results", None)
 
         cleaned_response = {
             "dataset": {
@@ -147,8 +257,8 @@ class Dataset:
                 "created_at": dataset.get("created_at"),
                 "updated_at": dataset.get("updated_at"),
                 "reference_dataset": dataset.get("reference_dataset"),
-                "derived_datasets": dataset.get("derived_datasets"),
-                "datacolumn": dataset.get("datacolumn"),
+                "derived_datasets": dataset.get("derived_datasets", []),
+                "datacolumn": dataset.get("datacolumn", []),
             },
             "dataset_rows": dataset_rows,
         }
