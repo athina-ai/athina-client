@@ -14,6 +14,21 @@ class Dataset:
     rows: List[Dict[str, Any]] = field(default_factory=list)
 
     @staticmethod
+    def _check_forbidden_keys(rows: List[Dict[str, Any]]):
+        """
+        Helper method to check if any row contains the forbidden key '__id'.
+
+        Args:
+            rows (List[Dict[str, Any]]): A list of rows to check.
+
+        Raises:
+            ValueError: If any row contains the '__id' key.
+        """
+        for row in rows:
+            if "__id" in row:
+                raise ValueError("Dataset rows cannot contain the '__id' key.")
+
+    @staticmethod
     def create(
         name: str,
         description: Optional[str] = None,
@@ -34,13 +49,16 @@ class Dataset:
         Returns:
             Dataset: An instance of the Dataset class representing the newly created dataset.
         """
+        rows = rows or []
+        Dataset._check_forbidden_keys(rows)
+
         dataset_data = {
             "source": "dev_sdk",
             "name": name,
             "description": description,
             "language_model_id": language_model_id,
             "prompt_template": prompt_template,
-            "dataset_rows": rows or [],
+            "dataset_rows": rows,
         }
 
         dataset_data = {k: v for k, v in dataset_data.items() if v is not None}
@@ -69,6 +87,8 @@ class Dataset:
             dataset_id (str): The ID of the dataset to which rows will be added.
             rows (List[Dict[str, Any]]): A list of rows to be added to the dataset.
         """
+        Dataset._check_forbidden_keys(rows)
+
         batch_size = 100
         for i in range(0, len(rows), batch_size):
             batch = rows[i : i + batch_size]
@@ -127,7 +147,7 @@ class Dataset:
 
         Args:
             dataset_id (str): The ID of the dataset to retrieve.
-            response_format (Optional[str]): The format of the response, either 'flat' or 'rich'. Defaults to 'flat'.
+            response_format (Optional[str]): The format of the response, either 'flat' or 'detailed'. Defaults to 'flat'.
 
         Returns:
             Dict[str, Any]: The cleaned and formatted dataset information.
@@ -147,7 +167,7 @@ class Dataset:
 
         Args:
             name (str): The name of the dataset to retrieve.
-            response_format (Optional[str]): The format of the response, either 'flat' or 'rich'. Defaults to 'flat'.
+            response_format (Optional[str]): The format of the response, either 'flat' or 'detailed'. Defaults to 'flat'.
 
         Returns:
             Dict[str, Any]: The cleaned and formatted dataset information.
@@ -179,7 +199,7 @@ class Dataset:
 
         Args:
             response (Dict[str, Any]): The raw API response containing dataset information.
-            response_format (str): The format of the response, either 'flat' or 'rich'.
+            response_format (str): The format of the response, either 'flat' or 'detailed'.
 
         Returns:
             Dict[str, Any]: The cleaned and formatted dataset information.
@@ -212,13 +232,16 @@ class Dataset:
                 if eval_result:
                     metric_value = eval_result.get("metric_value")
 
-                    # Attempt to convert to an integer if possible
+                    # Attempt to convert to an int if possible, otherwise float, otherwise keep as-is
                     try:
                         metric_value = int(metric_value)
                     except (ValueError, TypeError):
-                        pass  # Keep it as-is if it's not a number
+                        try:
+                            metric_value = float(metric_value)
+                        except (ValueError, TypeError):
+                            pass  # Keep it as-is if it's not a number
 
-                    if response_format == "rich":
+                    if response_format == "detailed":
                         metric_id = eval_result.get("metric_id")
                         explanation = eval_result.get("explanation")
 
@@ -234,7 +257,7 @@ class Dataset:
                     elif response_format == "flat":
                         row[f"{config_data['display_name']}"] = metric_value
                 else:
-                    if response_format == "rich":
+                    if response_format == "detailed":
                         row[f"{config_data['display_name']}"] = None
                     elif response_format == "flat":
                         row[f"{config_data['display_name']}"] = None
