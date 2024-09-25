@@ -1,3 +1,7 @@
+import os
+from dotenv import load_dotenv
+from pydantic import BaseModel
+import pandas as pd
 import requests
 from retrying import retry
 from typing import Any, Dict, List
@@ -540,3 +544,118 @@ class AthinaApiService:
             return response.json()["data"]["slug"]
         except Exception as e:
             raise CustomException("Error updating prompt template slug", str(e))
+
+    @staticmethod
+    def log_eval_results_with_config(eval_results_with_config: dict):
+        try:
+            endpoint = (
+                f"{AthinaApiService._base_url()}/api/v1/eval_run/log-eval-results-sdk"
+            )
+            response = requests.post(
+                endpoint,
+                headers=AthinaApiService._headers(),
+                json=eval_results_with_config,
+            )
+            if response.status_code == 401:
+                response_json = response.json()
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = "please check your athina api key and try again"
+                raise CustomException(details_message)
+            elif response.status_code != 200 and response.status_code != 201:
+                response_json = response.json()
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = response_json.get("details", {}).get(
+                    "message", "No Details"
+                )
+                print(f"ERROR: Failed to log eval results: {error_message}")
+                raise CustomException(details_message)
+            return response.json()
+        except Exception as e:
+            raise
+
+    @staticmethod
+    def log_eval_results_to_dataset(eval_results_with_config: dict, dataset_id: str):
+        try:
+
+            def remove_none_values(data: dict) -> dict:
+                return {k: v for k, v in data.items() if v is not None}
+
+            def serialize_metric(metric):
+                if isinstance(metric, (int, float, str, bool)):
+                    return metric
+                elif hasattr(metric, "to_dict"):
+                    return metric.to_dict()
+                elif hasattr(metric, "__dict__"):
+                    return metric.__dict__
+                else:
+                    return str(metric)
+
+            eval_results = eval_results_with_config.get("eval_results", [])
+            # Limit to the first 1000 items
+            sliced_eval_results = eval_results[:1000]
+            cleaned_eval_results = []
+
+            for eval_result in sliced_eval_results:
+                cleaned_metrics = [
+                    serialize_metric(metric)
+                    for metric in eval_result.get("metrics", [])
+                ]
+                cleaned_eval_result = {
+                    "metrics": cleaned_metrics,
+                    "reason": eval_result.get("reason"),
+                }
+                cleaned_eval_results.append(remove_none_values(cleaned_eval_result))
+
+            development_eval_config = remove_none_values(
+                eval_results_with_config.get("development_eval_config", {})
+            )
+
+            cleaned_results = {
+                "dataset_id": dataset_id,
+                "development_eval_config": development_eval_config,
+                "eval_results": cleaned_eval_results,
+            }
+
+            AthinaApiService.log_eval_results_with_config(cleaned_results)
+        except Exception as e:
+            print(f"Failed to log eval results: {e}")
+            raise e
+
+    @staticmethod
+    def log_eval_results(dataset_id: str, config_id: str, results: pd.DataFrame):
+        load_dotenv()
+
+        api_base = "https://api.athina.ai"
+        api_key = os.getenv("ATHINA_API_KEY")
+
+        if not api_key:
+            raise ValueError("ATHINA_API_KEY not found in .env file")
+
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        }
+
+        url = f"{api_base}/log_eval_results"
+
+        payload = {
+            "dataset_id": dataset_id,
+            "config_id": config_id,
+            "results": results.to_dict(orient="records"),
+        }
+
+        try:
+            response = requests.post(url, json=payload, headers=headers)
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            raise Exception(f"API call failed: {str(e)}")
+
+    @staticmethod
+    def _convert_eval_to_config(eval_obj: Any) -> Dict[str, Any]:
+        if isinstance(eval_obj, BaseModel):
+            return eval_obj.dict()
+        elif hasattr(eval_obj, "__dict__"):
+            return eval_obj.__dict__
+        else:
+            return {"name": eval_obj.__name__, "type": "function"}
