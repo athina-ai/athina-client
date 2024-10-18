@@ -3,7 +3,7 @@ from retrying import retry
 from typing import Any, Dict, List
 from athina_client.errors import CustomException, NoAthinaApiKeyException
 from athina_client.keys import AthinaApiKey
-from athina_client.constants import ATHINA_API_BASE_URL
+from athina_client.constants import ATHINA_API_BASE_URL, MAX_DATASET_ROWS
 from athina_client.api_base_url import AthinaApiBaseUrl
 
 
@@ -183,7 +183,7 @@ class AthinaApiService:
         """
         try:
             endpoint = f"{AthinaApiService._base_url()}/api/v1/dataset_v2/fetch-by-id/{dataset_id}"
-            params = {"offset": 0, "limit": 1000, "include_dataset_rows": "true"}
+            params = {"offset": 0, "limit": MAX_DATASET_ROWS, "include_dataset_rows": "true"}
             response = requests.post(
                 endpoint, headers=AthinaApiService._headers(), params=params
             )
@@ -220,7 +220,7 @@ class AthinaApiService:
         """
         try:
             endpoint = f"{AthinaApiService._base_url()}/api/v1/dataset_v2/fetch-by-name"
-            params = {"offset": 0, "limit": 1000, "include_dataset_rows": "true"}
+            params = {"offset": 0, "limit": MAX_DATASET_ROWS, "include_dataset_rows": "true"}
             response = requests.post(
                 endpoint,
                 headers=AthinaApiService._headers(),

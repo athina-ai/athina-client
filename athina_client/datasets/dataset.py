@@ -84,8 +84,10 @@ class Dataset:
         Adds rows to an existing dataset in batches.
 
         Args:
-            dataset_id (str): The ID of the dataset to which rows will be added.
-            rows (List[Dict[str, Any]]): A list of rows to be added to the dataset.
+            - dataset_id (str): The ID of the dataset to which rows will be added.
+            - rows (List[Dict[str, Any]]): A list of rows to be added to the dataset.
+        Raises:
+            - Exception: If the API returns an error or the limit of 5000 rows is exceeded.
         """
         Dataset._check_forbidden_keys(rows)
 
