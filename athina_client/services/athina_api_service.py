@@ -58,7 +58,8 @@ class AthinaApiService:
                     "message", "No Details"
                 )
                 raise CustomException(error_message, details_message)
-            return response.json()["data"]["dataset"]
+            data = response.json()["data"]
+            return data["dataset"]
         except Exception as e:
             raise
 
@@ -540,3 +541,43 @@ class AthinaApiService:
             return response.json()["data"]["slug"]
         except Exception as e:
             raise CustomException("Error updating prompt template slug", str(e))
+
+
+    @staticmethod
+    @retry(stop_max_attempt_number=2, wait_fixed=1000)
+    def change_dataset_project(dataset_id: str, project_name: str):
+        """
+        Change the project of a dataset by calling the Athina API.
+
+        Parameters:
+        - dataset_id (str): The ID of the dataset to change the project for.
+        - project_name (str): The name of the project.
+
+        Returns:
+        - The updated dataset object.
+
+        Raises:
+        - CustomException: If the API call fails or returns an error.
+        """
+        try:
+            endpoint = f"{AthinaApiService._base_url()}/api/v1/dataset_v2/{dataset_id}/change-project/"
+            response = requests.post(
+                endpoint,
+                headers=AthinaApiService._headers(),
+                json={"project_name": project_name},
+            )
+            if response.status_code == 401:
+                response_json = response.json()
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = "please check your athina api key and try again"
+                raise CustomException(error_message, details_message)
+            elif response.status_code != 200 and response.status_code != 201:
+                response_json = response.json()
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = response_json.get("details", {}).get(
+                    "message", "No Details"
+                )
+                raise CustomException(error_message, details_message)
+            return response.json()["data"]
+        except Exception as e:
+            raise CustomException("Error changing dataset project", str(e))

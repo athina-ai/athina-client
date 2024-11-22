@@ -12,6 +12,7 @@ class Dataset:
     language_model_id: Optional[str] = None
     prompt_template: Optional[Any] = None
     rows: List[Dict[str, Any]] = field(default_factory=list)
+    project_name: Optional[str] = None
 
     @staticmethod
     def _check_forbidden_keys(rows: List[Dict[str, Any]]):
@@ -35,6 +36,7 @@ class Dataset:
         language_model_id: Optional[str] = None,
         prompt_template: Optional[Any] = None,
         rows: List[Dict[str, Any]] = None,
+        project_name: Optional[str] = None,
     ) -> "Dataset":
         """
         Creates a new dataset with the provided details and rows.
@@ -45,6 +47,7 @@ class Dataset:
             language_model_id (Optional[str]): The ID of the language model used.
             prompt_template (Optional[Any]): The prompt template associated with the dataset.
             rows (List[Dict[str, Any]]): A list of rows to include in the dataset.
+            project_name (Optional[str]): The name of the project in which this dataset belongs to.
 
         Returns:
             Dataset: An instance of the Dataset class representing the newly created dataset.
@@ -59,6 +62,7 @@ class Dataset:
             "language_model_id": language_model_id,
             "prompt_template": prompt_template,
             "dataset_rows": rows,
+            "project_name": project_name if project_name is not None else None,
         }
 
         dataset_data = {k: v for k, v in dataset_data.items() if v is not None}
@@ -75,8 +79,32 @@ class Dataset:
             description=created_dataset_data["description"],
             language_model_id=created_dataset_data["language_model_id"],
             prompt_template=created_dataset_data["prompt_template"],
+            project_name=created_dataset_data.get("project_name"),
         )
         return dataset
+
+
+    @staticmethod
+    def change_project(dataset_id: str, project_name: str) -> Dict[str, Any]:
+        """
+        Changes the project of a dataset.
+
+        Args:
+            dataset_id (str): The ID of the dataset to change the project for.
+            project_name (str): The name of the project.
+
+        Returns:
+            Dict[str, Any]: The response from the API after changing the project.
+
+        Raises:
+            CustomException: If the API call fails or returns an error.
+        """
+        try:
+            response = AthinaApiService.change_dataset_project(dataset_id, project_name)
+            return response
+        except Exception as e:
+            raise CustomException("Error changing project for dataset", str(e))
+
 
     @staticmethod
     def add_rows(dataset_id: str, rows: List[Dict[str, Any]]):
