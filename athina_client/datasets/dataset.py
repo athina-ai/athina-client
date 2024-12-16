@@ -33,9 +33,9 @@ class Dataset:
     def create(
         name: str,
         description: Optional[str] = None,
-        language_model_id: Optional[str] = None,
-        prompt_template: Optional[Any] = None,
-        rows: List[Dict[str, Any]] = None,
+        rows: Optional[List[Dict[str, Any]]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[List[str]] = None,
         project_name: Optional[str] = None,
     ) -> "Dataset":
         """
@@ -59,9 +59,9 @@ class Dataset:
             "source": "dev_sdk",
             "name": name,
             "description": description,
-            "language_model_id": language_model_id,
-            "prompt_template": prompt_template,
             "dataset_rows": rows,
+            "metadata": metadata,
+            "tags": tags,
             "project_name": project_name if project_name is not None else None,
         }
 
@@ -83,7 +83,6 @@ class Dataset:
         )
         return dataset
 
-
     @staticmethod
     def change_project(dataset_id: str, project_name: str) -> Dict[str, Any]:
         """
@@ -104,7 +103,6 @@ class Dataset:
             return response
         except Exception as e:
             raise CustomException("Error changing project for dataset", str(e))
-
 
     @staticmethod
     def add_rows(dataset_id: str, rows: List[Dict[str, Any]]):
