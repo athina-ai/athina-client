@@ -169,7 +169,9 @@ class AthinaApiService:
 
     @staticmethod
     @retry(stop_max_attempt_number=2, wait_fixed=1000)
-    def get_dataset_by_id(dataset_id: str):
+    def get_dataset_by_id(
+        dataset_id: str, limit: int = MAX_DATASET_ROWS, offset: int = 0
+    ):
         """
         Get a dataset by calling the Athina API.
 
@@ -184,7 +186,11 @@ class AthinaApiService:
         """
         try:
             endpoint = f"{AthinaApiService._base_url()}/api/v1/dataset_v2/fetch-by-id/{dataset_id}"
-            params = {"offset": 0, "limit": MAX_DATASET_ROWS, "include_dataset_rows": "true"}
+            params = {
+                "offset": offset,
+                "limit": limit,
+                "include_dataset_rows": "true",
+            }
             response = requests.post(
                 endpoint, headers=AthinaApiService._headers(), params=params
             )
@@ -221,7 +227,11 @@ class AthinaApiService:
         """
         try:
             endpoint = f"{AthinaApiService._base_url()}/api/v1/dataset_v2/fetch-by-name"
-            params = {"offset": 0, "limit": MAX_DATASET_ROWS, "include_dataset_rows": "true"}
+            params = {
+                "offset": 0,
+                "limit": MAX_DATASET_ROWS,
+                "include_dataset_rows": "true",
+            }
             response = requests.post(
                 endpoint,
                 headers=AthinaApiService._headers(),
@@ -541,7 +551,6 @@ class AthinaApiService:
             return response.json()["data"]["slug"]
         except Exception as e:
             raise CustomException("Error updating prompt template slug", str(e))
-
 
     @staticmethod
     @retry(stop_max_attempt_number=2, wait_fixed=1000)
