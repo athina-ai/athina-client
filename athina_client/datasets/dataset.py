@@ -315,3 +315,36 @@ class Dataset:
         }
 
         return cleaned_response
+
+    @staticmethod
+    def update_cells(dataset_id: str, cells: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Updates specific cells in a dataset.
+
+        Args:
+            dataset_id (str): The ID of the dataset to update cells in.
+            cells (List[Dict[str, Any]]): A list of cells to update, where each cell is a dictionary containing:
+                - row_no (int): The row number of the cell to update (1-based indexing).
+                - column_name (str): The name of the column containing the cell to update.
+                - value (Any): The new value for the specified cell.
+
+        Returns:
+            Dict[str, Any]: The response from the API after updating the cells.
+
+        Raises:
+            CustomException: If the API call fails or returns an error.
+        
+        Example:
+            ```python
+            cells_to_update = [
+                {"row_no": 1, "column_name": "query", "value": "Updated query text"},
+                {"row_no": 2, "column_name": "response", "value": "New model response"}
+            ]
+            result = Dataset.update_cells("dataset-123", cells_to_update)
+            ```
+        """
+        try:
+            response = AthinaApiService.update_dataset_cells(dataset_id, cells)
+            return response
+        except Exception as e:
+            raise CustomException("Error updating cells in dataset", str(e))

@@ -590,3 +590,46 @@ class AthinaApiService:
             return response.json()["data"]
         except Exception as e:
             raise CustomException("Error changing dataset project", str(e))
+
+    @staticmethod
+    @retry(stop_max_attempt_number=2, wait_fixed=1000)
+    def update_dataset_cells(dataset_id: str, cells: List[Dict[str, Any]]):
+        """
+        Updates specific cells in a dataset by calling the Athina API.
+
+        Parameters:
+        - dataset_id (str): The ID of the dataset to update cells in.
+        - cells (List[Dict]): A list of cells to update, where each cell contains:
+        - row_no (int): The row number of the cell to update.
+        - column_name (str): The column name of the cell to update.
+        - value (Any): The new value for the specified cell.
+
+        Returns:
+        - The API response after updating the cells.
+
+        Raises:
+        - CustomException: If the API call fails or returns an error.
+        """
+        try:
+            endpoint = f"{AthinaApiService._base_url()}/api/v1/dataset_v2/{dataset_id}/cells"
+            response = requests.put(
+                endpoint,
+                headers=AthinaApiService._headers(),
+                json={"cells": cells},
+            )
+            if response.status_code == 401:
+                response_json = response.json()
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = "please check your athina api key and try again"
+                raise CustomException(error_message, details_message)
+            elif response.status_code != 200 and response.status_code != 201:
+                response_json = response.json()
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = response_json.get("details", {}).get(
+                    "message", "No Details"
+                )
+                raise CustomException(error_message, details_message)
+            return response.json()["data"]
+        except Exception as e:
+            raise CustomException("Error updating dataset cells", str(e))
+
