@@ -168,7 +168,9 @@ class Dataset:
 
     @staticmethod
     def get_dataset_by_id(
-        dataset_id: str, response_format: Optional[str] = "flat"
+        dataset_id: str,
+        response_format: Optional[str] = "flat",
+        include_dataset_annotations: Optional[bool] = False
     ) -> Dict[str, Any]:
         """
         Retrieves a dataset by its ID and formats the response based on the provided format.
@@ -176,19 +178,22 @@ class Dataset:
         Args:
             dataset_id (str): The ID of the dataset to retrieve.
             response_format (Optional[str]): The format of the response, either 'flat' or 'detailed'. Defaults to 'flat'.
+            include_dataset_annotations (Optional[bool]): Whether to include dataset annotations in the response. If True, annotations will be included; if False, they will be excluded. Defaults to False.
 
         Returns:
             Dict[str, Any]: The cleaned and formatted dataset information.
         """
         try:
-            response = AthinaApiService.get_dataset_by_id(dataset_id)
+            response = AthinaApiService.get_dataset_by_id(dataset_id, include_dataset_annotations=include_dataset_annotations)
             return Dataset._clean_response(response, response_format)
         except Exception as e:
             raise
 
     @staticmethod
     def get_dataset_by_name(
-        name: str, response_format: Optional[str] = "flat"
+        name: str,
+        response_format: Optional[str] = "flat",
+        include_dataset_annotations: Optional[bool] = False
     ) -> Dict[str, Any]:
         """
         Retrieves a dataset by its name and formats the response based on the provided format.
@@ -196,12 +201,13 @@ class Dataset:
         Args:
             name (str): The name of the dataset to retrieve.
             response_format (Optional[str]): The format of the response, either 'flat' or 'detailed'. Defaults to 'flat'.
+            include_dataset_annotations (Optional[bool]): Whether to include dataset annotations in the response. If True, annotations will be included; if False, they will be excluded. Defaults to False.
 
         Returns:
             Dict[str, Any]: The cleaned and formatted dataset information.
         """
         try:
-            response = AthinaApiService.get_dataset_by_name(name)
+            response = AthinaApiService.get_dataset_by_name(name, include_dataset_annotations=include_dataset_annotations)
             return Dataset._clean_response(response, response_format)
         except Exception as e:
             raise

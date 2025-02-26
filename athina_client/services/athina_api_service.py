@@ -170,7 +170,10 @@ class AthinaApiService:
     @staticmethod
     @retry(stop_max_attempt_number=2, wait_fixed=1000)
     def get_dataset_by_id(
-        dataset_id: str, limit: int = MAX_DATASET_ROWS, offset: int = 0
+        dataset_id: str,
+        limit: int = MAX_DATASET_ROWS,
+        offset: int = 0,
+        include_dataset_annotations: bool = False
     ):
         """
         Get a dataset by calling the Athina API.
@@ -190,6 +193,7 @@ class AthinaApiService:
                 "offset": offset,
                 "limit": limit,
                 "include_dataset_rows": "true",
+                "include_dataset_annotations": include_dataset_annotations
             }
             response = requests.post(
                 endpoint, headers=AthinaApiService._headers(), params=params
