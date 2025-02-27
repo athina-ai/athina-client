@@ -180,6 +180,9 @@ class AthinaApiService:
 
         Parameters:
         - dataset_id (str): The ID of the dataset to get.
+        - limit (int, optional): Maximum number of dataset rows to return. Defaults to MAX_DATASET_ROWS.
+        - offset (int, optional): Offset for dataset rows. Defaults to 0.
+        - include_dataset_annotations (bool, optional): Whether to include dataset annotations. Defaults to False.
 
         Returns:
         - The dataset object along with metrics and eval configs.
@@ -225,6 +228,7 @@ class AthinaApiService:
 
         Parameters:
         - name (str): The name of the dataset to get.
+        - include_dataset_annotations (bool, optional): Whether to include dataset annotations. Defaults to False.
 
         Returns:
         - The dataset object along with metrics and eval configs
