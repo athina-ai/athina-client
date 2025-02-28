@@ -170,13 +170,19 @@ class AthinaApiService:
     @staticmethod
     @retry(stop_max_attempt_number=2, wait_fixed=1000)
     def get_dataset_by_id(
-        dataset_id: str, limit: int = MAX_DATASET_ROWS, offset: int = 0
+        dataset_id: str,
+        limit: int = MAX_DATASET_ROWS,
+        offset: int = 0,
+        include_dataset_annotations: bool = False
     ):
         """
         Get a dataset by calling the Athina API.
 
         Parameters:
         - dataset_id (str): The ID of the dataset to get.
+        - limit (int, optional): Maximum number of dataset rows to return. Defaults to MAX_DATASET_ROWS.
+        - offset (int, optional): Offset for dataset rows. Defaults to 0.
+        - include_dataset_annotations (bool, optional): Whether to include dataset annotations. Defaults to False.
 
         Returns:
         - The dataset object along with metrics and eval configs.
@@ -190,6 +196,7 @@ class AthinaApiService:
                 "offset": offset,
                 "limit": limit,
                 "include_dataset_rows": "true",
+                "include_dataset_annotations": include_dataset_annotations
             }
             response = requests.post(
                 endpoint, headers=AthinaApiService._headers(), params=params
@@ -212,12 +219,16 @@ class AthinaApiService:
 
     @staticmethod
     @retry(stop_max_attempt_number=2, wait_fixed=1000)
-    def get_dataset_by_name(name: str):
+    def get_dataset_by_name(
+        name: str,
+        include_dataset_annotations: bool = False
+    ):
         """
         Get a dataset by calling the Athina API.
 
         Parameters:
         - name (str): The name of the dataset to get.
+        - include_dataset_annotations (bool, optional): Whether to include dataset annotations. Defaults to False.
 
         Returns:
         - The dataset object along with metrics and eval configs
@@ -231,6 +242,7 @@ class AthinaApiService:
                 "offset": 0,
                 "limit": MAX_DATASET_ROWS,
                 "include_dataset_rows": "true",
+                "include_dataset_annotations": include_dataset_annotations,
             }
             response = requests.post(
                 endpoint,
