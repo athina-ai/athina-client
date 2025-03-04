@@ -34,6 +34,7 @@ class Dataset:
         name: str,
         description: Optional[str] = None,
         rows: Optional[List[Dict[str, Any]]] = None,
+        eval_columns: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         tags: Optional[List[str]] = None,
         project_name: Optional[str] = None,
@@ -47,12 +48,14 @@ class Dataset:
             language_model_id (Optional[str]): The ID of the language model used.
             prompt_template (Optional[Any]): The prompt template associated with the dataset.
             rows (List[Dict[str, Any]]): A list of rows to include in the dataset.
+            eval_columns (List[str, Any]): A list of column names that should be treated as evals.
             project_name (Optional[str]): The name of the project in which this dataset belongs to.
 
         Returns:
             Dataset: An instance of the Dataset class representing the newly created dataset.
         """
         rows = rows or []
+        eval_columns = eval_columns or []
         Dataset._check_forbidden_keys(rows)
 
         dataset_data = {
@@ -60,6 +63,7 @@ class Dataset:
             "name": name,
             "description": description,
             "dataset_rows": rows,
+            "eval_columns": eval_columns,
             "metadata": metadata,
             "tags": tags,
             "project_name": project_name if project_name is not None else None,
