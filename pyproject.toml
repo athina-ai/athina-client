@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "athina-client"
-version = "0.2.6"
+version = "0.2.7"
 description = "Light weight SDK to interact with athina datasets"
 authors = ["Shiv Sakhuja <shiv@athina.ai>", "Vivek Aditya <vivek@athina.ai>", "Akhil Bisht <akhil@athina.ai>"]
 license = "MIT"
