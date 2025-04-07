@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field
 from athina_client.services import AthinaApiService
-
+from athina_client.constants import MAX_DATASET_ROWS
 
 @dataclass
 class Dataset:
@@ -173,6 +173,8 @@ class Dataset:
     @staticmethod
     def get_dataset_by_id(
         dataset_id: str,
+        limit: Optional[int] = MAX_DATASET_ROWS,
+        offset: Optional[int] = 0,
         response_format: Optional[str] = "flat",
         include_dataset_annotations: Optional[bool] = False
     ) -> Dict[str, Any]:
@@ -181,6 +183,8 @@ class Dataset:
 
         Args:
             dataset_id (str): The ID of the dataset to retrieve.
+            limit (Optional[int]): Maximum number of dataset rows to return per page. Defaults to MAX_DATASET_ROWS.
+            offset (Optional[int]): Page number (zero-indexed) for pagination of dataset rows. Defaults to 0 (first page).
             response_format (Optional[str]): The format of the response, either 'flat' or 'detailed'. Defaults to 'flat'.
             include_dataset_annotations (Optional[bool]): Whether to include dataset annotations in the response. If True, annotations will be included; if False, they will be excluded. Defaults to False.
 
@@ -188,7 +192,7 @@ class Dataset:
             Dict[str, Any]: The cleaned and formatted dataset information.
         """
         try:
-            response = AthinaApiService.get_dataset_by_id(dataset_id, include_dataset_annotations=include_dataset_annotations)
+            response = AthinaApiService.get_dataset_by_id(dataset_id, limit=limit, offset=offset, include_dataset_annotations=include_dataset_annotations)
             return Dataset._clean_response(response, response_format)
         except Exception as e:
             raise
@@ -196,6 +200,8 @@ class Dataset:
     @staticmethod
     def get_dataset_by_name(
         name: str,
+        limit: Optional[int] = MAX_DATASET_ROWS,
+        offset: Optional[int] = 0,
         response_format: Optional[str] = "flat",
         include_dataset_annotations: Optional[bool] = False
     ) -> Dict[str, Any]:
@@ -204,6 +210,8 @@ class Dataset:
 
         Args:
             name (str): The name of the dataset to retrieve.
+            limit (Optional[int]): Maximum number of dataset rows to return per page. Defaults to MAX_DATASET_ROWS.
+            offset (Optional[int]): Page number (zero-indexed) for pagination of dataset rows. Defaults to 0 (first page).
             response_format (Optional[str]): The format of the response, either 'flat' or 'detailed'. Defaults to 'flat'.
             include_dataset_annotations (Optional[bool]): Whether to include dataset annotations in the response. If True, annotations will be included; if False, they will be excluded. Defaults to False.
 
@@ -211,7 +219,7 @@ class Dataset:
             Dict[str, Any]: The cleaned and formatted dataset information.
         """
         try:
-            response = AthinaApiService.get_dataset_by_name(name, include_dataset_annotations=include_dataset_annotations)
+            response = AthinaApiService.get_dataset_by_name(name, limit=limit, offset=offset, include_dataset_annotations=include_dataset_annotations)
             return Dataset._clean_response(response, response_format)
         except Exception as e:
             raise
