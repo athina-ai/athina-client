@@ -647,78 +647,120 @@ class AthinaApiService:
 
     @staticmethod
     @retry(stop_max_attempt_number=2, wait_fixed=1000)
-    def create_eval_run(create_eval_run: bool, eval_configs: List[Dict[str, Any]], dataset_id: Optional[str] = None):
+    def run_evals(
+        eval_configs: List[Dict[str, Any]],
+        dataset_id: str,
+        is_conditional_node: bool = False
+    ):
         """
-        Wrapper for POST /api/v1/eval_run
-        
-        Parameters:
-        - create_eval_run (bool): Flag indicating whether to create a new eval run.
-        - eval_configs (List[Dict]): Evaluation configurations.
-        - dataset_id (Optional[str]): Optional dataset ID.
-
-        Returns:
-        - eval_run_id (str): The ID of the created evaluation run.
-        """
-        try:
-            endpoint = f"{AthinaApiService._base_url()}/api/v1/eval_run"
-            params = {'datasetId': dataset_id} if dataset_id else {}
-            response = requests.post(
-                endpoint,
-                headers=AthinaApiService._headers(),
-                json={
-                    "createEvalRun": create_eval_run,
-                    "eval_configs": eval_configs
-                },
-                params=params
-            )
-            response_json = response.json()
-
-            if response.status_code not in [200, 201]:
-                error_message = response_json.get("error", "Unknown Error")
-                details_message = response_json.get("details", {}).get("message", "No details")
-                raise CustomException(error_message, details_message)
-
-            return response_json["data"]["eval_run"]["id"]
-        except requests.RequestException as e:
-            raise CustomException("Request failed", str(e))
-        except Exception as e:
-            raise CustomException("Unexpected error occurred", str(e))
-
-    @staticmethod
-    @retry(stop_max_attempt_number=2, wait_fixed=1000)
-    def create_dataset_event(dataset_id: str, event_type: str, payload: Dict[str, Any], is_conditional_node: Optional[bool] = False):
-        """
-        Wrapper for POST /api/v1/dataset_event/{datasetId}
+        Runs evals by creating an eval run and triggering a dataset event.
 
         Parameters:
+        - eval_configs (List[Dict[str, Any]]): Evaluation configurations.
         - dataset_id (str): The dataset ID.
-        - event_type (str): Type of the event.
-        - payload (Dict): Payload associated with the event.
-        - is_conditional_node (bool, optional): Flag indicating if the node is conditional.
+        - is_conditional_node (bool): Whether this is a conditional node. Default is False.
 
         Returns:
-        - Dataset event response data.
+        - Dict: The dataset event response.
+
+        Raises:
+        - CustomException: If any step in the process fails.
         """
+
+        def _create_eval_run(
+            create_eval_run: bool,
+            eval_configs: List[Dict[str, Any]],
+            dataset_id: Optional[str] = None
+        ) -> str:
+            """
+            Internal method to create an eval run.
+
+            Parameters:
+            - create_eval_run (bool)
+            - eval_configs (List[Dict])
+            - dataset_id (Optional[str])
+
+            Returns:
+            - eval_run_id (str)
+            """
+            try:
+                endpoint = f"{AthinaApiService._base_url()}/api/v1/eval_run"
+                params = {'datasetId': dataset_id} if dataset_id else {}
+                response = requests.post(
+                    endpoint,
+                    headers=AthinaApiService._headers(),
+                    json={
+                        "createEvalRun": create_eval_run,
+                        "eval_configs": eval_configs
+                    },
+                    params=params
+                )
+                response_json = response.json()
+
+                if response.status_code not in [200, 201]:
+                    error_message = response_json.get("error", "Unknown Error")
+                    details_message = response_json.get("details", {}).get("message", "No details")
+                    raise CustomException(error_message, details_message)
+
+                return response_json["data"]["eval_run"]["id"]
+            except requests.RequestException as e:
+                raise CustomException("Request failed", str(e))
+            except Exception as e:
+                raise CustomException("Unexpected error occurred", str(e))
+
+        def _create_dataset_event(
+            dataset_id: str,
+            event_type: str,
+            payload: Dict[str, Any],
+            is_conditional_node: Optional[bool] = False
+        ) -> Dict[str, Any]:
+            """
+            Internal method to trigger a dataset event.
+
+            Parameters:
+            - dataset_id (str)
+            - event_type (str)
+            - payload (Dict)
+            - is_conditional_node (Optional[bool])
+
+            Returns:
+            - Dataset event response (Dict)
+            """
+            try:
+                endpoint = f"{AthinaApiService._base_url()}/api/v1/dataset_event/{dataset_id}"
+                response = requests.post(
+                    endpoint,
+                    headers=AthinaApiService._headers(),
+                    json={
+                        "event_type": event_type,
+                        "payload": payload,
+                        "isConditionalNode": is_conditional_node
+                    }
+                )
+                response_json = response.json()
+
+                if response.status_code not in [200, 201]:
+                    error_message = response_json.get("error", "Unknown Error")
+                    details_message = response_json.get("details", {}).get("message", "No details")
+                    raise CustomException(error_message, details_message)
+
+                return response_json["data"]
+            except requests.RequestException as e:
+                raise CustomException("Request failed", str(e))
+            except Exception as e:
+                raise CustomException("Unexpected error occurred", str(e))
+
         try:
-            endpoint = f"{AthinaApiService._base_url()}/api/v1/dataset_event/{dataset_id}"
-            response = requests.post(
-                endpoint,
-                headers=AthinaApiService._headers(),
-                json={
-                    "event_type": event_type,
-                    "payload": payload,
-                    "isConditionalNode": is_conditional_node
-                }
+            eval_run_id = _create_eval_run(
+                create_eval_run=True,
+                eval_configs=eval_configs,
+                dataset_id=dataset_id
             )
-            response_json = response.json()
-
-            if response.status_code not in [200, 201]:
-                error_message = response_json.get("error", "Unknown Error")
-                details_message = response_json.get("details", {}).get("message", "No details")
-                raise CustomException(error_message, details_message)
-
-            return response_json["data"]
-        except requests.RequestException as e:
-            raise CustomException("Request failed", str(e))
+            return _create_dataset_event(
+                dataset_id=dataset_id,
+                event_type="run_eval",
+                payload={"eval_run_id": eval_run_id},
+                is_conditional_node=is_conditional_node
+            )
         except Exception as e:
-            raise CustomException("Unexpected error occurred", str(e))
+            raise CustomException("Error running evals", str(e))
