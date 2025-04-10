@@ -221,6 +221,8 @@ class AthinaApiService:
     @retry(stop_max_attempt_number=2, wait_fixed=1000)
     def get_dataset_by_name(
         name: str,
+        limit: int = MAX_DATASET_ROWS,
+        offset: int = 0,
         include_dataset_annotations: bool = False
     ):
         """
@@ -228,6 +230,8 @@ class AthinaApiService:
 
         Parameters:
         - name (str): The name of the dataset to get.
+        - limit (int, optional): Maximum number of dataset rows to return. Defaults to MAX_DATASET_ROWS.
+        - offset (int, optional): Offset for dataset rows. Defaults to 0.
         - include_dataset_annotations (bool, optional): Whether to include dataset annotations. Defaults to False.
 
         Returns:
@@ -239,8 +243,8 @@ class AthinaApiService:
         try:
             endpoint = f"{AthinaApiService._base_url()}/api/v1/dataset_v2/fetch-by-name"
             params = {
-                "offset": 0,
-                "limit": MAX_DATASET_ROWS,
+                "offset": offset,
+                "limit": limit,
                 "include_dataset_rows": "true",
                 "include_dataset_annotations": include_dataset_annotations,
             }
