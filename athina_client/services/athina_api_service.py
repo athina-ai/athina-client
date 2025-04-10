@@ -645,3 +645,80 @@ class AthinaApiService:
         except Exception as e:
             raise CustomException("Error updating dataset cells", str(e))
 
+    @staticmethod
+    @retry(stop_max_attempt_number=2, wait_fixed=1000)
+    def create_eval_run(create_eval_run: bool, eval_configs: List[Dict[str, Any]], dataset_id: Optional[str] = None):
+        """
+        Wrapper for POST /api/v1/eval_run
+        
+        Parameters:
+        - create_eval_run (bool): Flag indicating whether to create a new eval run.
+        - eval_configs (List[Dict]): Evaluation configurations.
+        - dataset_id (Optional[str]): Optional dataset ID.
+
+        Returns:
+        - eval_run_id (str): The ID of the created evaluation run.
+        """
+        try:
+            endpoint = f"{AthinaApiService._base_url()}/api/v1/eval_run"
+            params = {'datasetId': dataset_id} if dataset_id else {}
+            response = requests.post(
+                endpoint,
+                headers=AthinaApiService._headers(),
+                json={
+                    "createEvalRun": create_eval_run,
+                    "eval_configs": eval_configs
+                },
+                params=params
+            )
+            response_json = response.json()
+
+            if response.status_code not in [200, 201]:
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = response_json.get("details", {}).get("message", "No details")
+                raise CustomException(error_message, details_message)
+
+            return response_json["data"]["eval_run"]["id"]
+        except requests.RequestException as e:
+            raise CustomException("Request failed", str(e))
+        except Exception as e:
+            raise CustomException("Unexpected error occurred", str(e))
+
+    @staticmethod
+    @retry(stop_max_attempt_number=2, wait_fixed=1000)
+    def create_dataset_event(dataset_id: str, event_type: str, payload: Dict[str, Any], is_conditional_node: Optional[bool] = False):
+        """
+        Wrapper for POST /api/v1/dataset_event/{datasetId}
+
+        Parameters:
+        - dataset_id (str): The dataset ID.
+        - event_type (str): Type of the event.
+        - payload (Dict): Payload associated with the event.
+        - is_conditional_node (bool, optional): Flag indicating if the node is conditional.
+
+        Returns:
+        - Dataset event response data.
+        """
+        try:
+            endpoint = f"{AthinaApiService._base_url()}/api/v1/dataset_event/{dataset_id}"
+            response = requests.post(
+                endpoint,
+                headers=AthinaApiService._headers(),
+                json={
+                    "event_type": event_type,
+                    "payload": payload,
+                    "isConditionalNode": is_conditional_node
+                }
+            )
+            response_json = response.json()
+
+            if response.status_code not in [200, 201]:
+                error_message = response_json.get("error", "Unknown Error")
+                details_message = response_json.get("details", {}).get("message", "No details")
+                raise CustomException(error_message, details_message)
+
+            return response_json["data"]
+        except requests.RequestException as e:
+            raise CustomException("Request failed", str(e))
+        except Exception as e:
+            raise CustomException("Unexpected error occurred", str(e))
