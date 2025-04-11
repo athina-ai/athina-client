@@ -196,7 +196,7 @@ class AthinaApiService:
                 "offset": offset,
                 "limit": limit,
                 "include_dataset_rows": "true",
-                "include_dataset_annotations": include_dataset_annotations
+                "include_dataset_annotations": "true" if include_dataset_annotations else "false",
             }
             response = requests.post(
                 endpoint, headers=AthinaApiService._headers(), params=params
@@ -246,7 +246,7 @@ class AthinaApiService:
                 "offset": offset,
                 "limit": limit,
                 "include_dataset_rows": "true",
-                "include_dataset_annotations": include_dataset_annotations,
+                "include_dataset_annotations": "true" if include_dataset_annotations else "false",
             }
             response = requests.post(
                 endpoint,
