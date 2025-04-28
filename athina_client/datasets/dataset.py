@@ -332,6 +332,12 @@ class Dataset:
             "dataset_rows": dataset_rows,
         }
 
+        if "dataset_annotations" in response:
+            cleaned_response["dataset_annotations"] = response.get("dataset_annotations")
+
+        if "annotated_users" in response:
+            cleaned_response["annotated_users"] = response.get("annotated_users")
+
         return cleaned_response
 
     @staticmethod
