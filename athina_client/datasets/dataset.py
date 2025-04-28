@@ -372,3 +372,32 @@ class Dataset:
             return response
         except Exception as e:
             raise CustomException("Error updating cells in dataset", str(e))
+
+    @staticmethod
+    def run_evals(
+        dataset_id: str,
+        eval_configs: List[Dict[str, Any]],
+        is_conditional_node: bool = False
+    ) -> Dict[str, Any]:
+        """
+        Triggers evaluation run for the given dataset using specified evaluation configurations.
+
+        Args:
+            dataset_id (str): The ID of the dataset.
+            eval_configs (List[Dict[str, Any]]): Evaluation configurations to use.
+            is_conditional_node (bool, optional): Whether this eval run is for a conditional node. Defaults to False.
+
+        Returns:
+            Dict[str, Any]: The response from the dataset event trigger.
+
+        Raises:
+            CustomException: If the evaluation trigger fails.
+        """
+        try:
+            return AthinaApiService.run_evals(
+                eval_configs=eval_configs,
+                dataset_id=dataset_id,
+                is_conditional_node=is_conditional_node
+            )
+        except Exception as e:
+            raise CustomException("Error running evals", str(e))
